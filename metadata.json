@@ -1,0 +1,7 @@
+{
+  "name": "React Flip Clock",
+  "description": "A visually appealing, responsive flip clock that displays the current time with a classic card-flip animation. It also shows the current date in a clean, minimalist style.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
