@@ -1,6 +1,4 @@
-
 import React from 'react';
-// FIX: Correctly import Task type from the parent App component.
 import { Task } from '../App';
 
 interface ProductivityStatsProps {
@@ -12,7 +10,6 @@ const ProductivityStats: React.FC<ProductivityStatsProps> = ({ tasks, onViewRepo
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  // FIX: Use `createdAt` field for date comparison instead of `id`.
   const tasksCreatedTodayCount = tasks.filter(task => new Date(task.createdAt) >= todayStart).length;
 
   const tasksCompletedTodayCount = tasks.filter(task => 
@@ -28,7 +25,6 @@ const ProductivityStats: React.FC<ProductivityStatsProps> = ({ tasks, onViewRepo
   startOfWeek.setHours(0, 0, 0, 0);
 
   const tasksThisWeek = tasks.filter(task => {
-    // FIX: Use `createdAt` field for date comparison.
     const createdDate = new Date(task.createdAt);
     const dueDate = task.dueDate ? new Date(task.dueDate) : null;
     return createdDate >= startOfWeek || (dueDate && dueDate >= startOfWeek);
@@ -41,15 +37,15 @@ const ProductivityStats: React.FC<ProductivityStatsProps> = ({ tasks, onViewRepo
 
   const StatCard: React.FC<{ label: string; value: string | number }> = ({ label, value }) => (
     <div className="flex flex-col items-center justify-center bg-white/50 dark:bg-neutral-800/50 p-4 rounded-lg shadow-md">
-      <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{value}</span>
-      <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{label}</span>
+      <span className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{value}</span>
+      <span className="text-xs text-center text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{label}</span>
     </div>
   );
 
   return (
-    <div className="w-full max-w-lg mx-auto p-4 rounded-2xl shadow-lg bg-gray-200/30 dark:bg-neutral-900/50 backdrop-blur-sm animate-fadeIn">
+    <div className="w-full max-w-lg mx-auto p-4 sm:p-6 rounded-2xl shadow-lg bg-gray-200/30 dark:bg-neutral-900/50 backdrop-blur-sm animate-fadeIn">
       <h3 className="text-lg font-semibold text-zinc-600 dark:text-zinc-300 mb-4 text-center">Productivity Stats</h3>
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
         <StatCard label="Created Today" value={tasksCreatedTodayCount} />
         <StatCard label="Completed Today" value={tasksCompletedTodayCount} />
         <StatCard label="Weekly" value={`${weeklyCompletionPercentage}%`} />

@@ -1,23 +1,18 @@
-
 import React, { useState, useMemo } from 'react';
-// FIX: Correctly import Task and Priority types from the parent App component.
 import { Task, Priority } from '../App';
 import TaskInput from './TaskInput';
 import TaskItem from './TaskItem';
 
 interface TodoListProps {
   tasks: Task[];
-  // FIX: Changed to Set<string> to handle string-based IDs from the backend.
   exitingTaskIds: Set<string>;
   isFocusMode: boolean;
   onAddTask: (taskDetails: { text: string; dueDate?: string; priority?: Priority; tag?: string; reminderEnabled?: boolean; reminderLeadTime?: number; }) => void;
-  // FIX: Changed ID type to string for backend compatibility.
   onToggleTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onClearHistory: () => void;
 }
 
-// Moved Section outside of TodoList to prevent re-mounting on every render
 const Section: React.FC<{
   title: string;
   tasks: Task[];
@@ -96,7 +91,7 @@ const TodoList: React.FC<TodoListProps> = ({
     .sort((a, b) => new Date(b.completionDate!).getTime() - new Date(a.completionDate!).getTime());
 
   return (
-    <div className="w-full max-w-lg mx-auto bg-white/50 dark:bg-neutral-900/50 p-6 rounded-2xl shadow-2xl backdrop-blur-sm">
+    <div className="w-full max-w-lg mx-auto bg-white/50 dark:bg-neutral-900/50 p-4 sm:p-6 rounded-2xl shadow-2xl backdrop-blur-sm">
       <div className={`transition-all duration-500 ease-in-out ${isFocusMode ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-screen opacity-100'}`}>
         <h2 className="text-2xl font-bold text-center mb-6 text-zinc-800 dark:text-zinc-300">Daily Tasks</h2>
         <TaskInput onAddTask={onAddTask} />

@@ -1,6 +1,4 @@
-
 import React, { useState } from 'react';
-// FIX: Correctly import Priority type from the parent App component.
 import { Priority } from '../App';
 
 interface TaskInputProps {
@@ -14,7 +12,10 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
   const [priority, setPriority] = useState<Priority | ''>('');
   const [tag, setTag] = useState('');
   const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderLeadTime, setReminderLeadTime] = useState(15); // Default to 15 mins before
+  const [reminderLeadTime, setReminderLeadTime] = useState(15);
+
+  const [isDateFocused, setIsDateFocused] = useState(false);
+  const [isTimeFocused, setIsTimeFocused] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,11 +65,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
         };
         recognition.onerror = (event: any) => {
             console.error('Speech recognition error:', event.error);
-            if (event.error === 'not-allowed') {
-                alert('Microphone access was denied. Please allow microphone access in your browser settings to use this feature.');
-            } else {
-                alert(`Voice recognition failed: ${event.error}. Please try again.`);
-            }
+            alert(`Voice recognition failed: ${event.error}. Please try again.`);
         };
         recognition.start();
     } else {
@@ -76,50 +73,64 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
     }
   };
 
-
-  const inputStyles = "bg-gray-100 dark:bg-neutral-800 text-black dark:text-white placeholder-zinc-500 dark:placeholder-zinc-500 px-3 py-2 rounded-lg shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
+  const inputStyles = "w-full bg-gray-100 dark:bg-neutral-800 text-black dark:text-white placeholder-zinc-500 dark:placeholder-zinc-500 px-3 py-2 rounded-lg shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <input
           type="text"
           value={inputValue}
           onChange={e => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Add a new task... (Ctrl+Enter to add)"
-          className={`flex-grow ${inputStyles}`}
+          placeholder="Add a new task... (Ctrl+Enter)"
+          className={`flex-grow min-w-0 ${inputStyles}`}
           aria-label="New task input"
         />
-         <button
-          type="button"
-          onClick={handleVoiceInput}
-          className="bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-zinc-600 dark:text-zinc-300 font-semibold px-3 py-2 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-          aria-label="Add task by voice"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm5 3a1 1 0 11-2 0V4a1 1 0 112 0v3zM4 9a1 1 0 00-1 1v1a5 5 0 005 5h1a5 5 0 005-5v-1a1 1 0 10-2 0v1a3 3 0 01-3 3h-1a3 3 0 01-3-3v-1a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-        </button>
-        <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-black transition-all disabled:bg-neutral-400 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:shadow-none"
-          aria-label="Add new task"
-          disabled={!inputValue.trim()}
-        >
-          Add
-        </button>
+        <div className="flex items-center gap-2">
+            <button
+            type="button"
+            onClick={handleVoiceInput}
+            className="flex-shrink-0 bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-zinc-600 dark:text-zinc-300 font-semibold px-3 py-2 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            aria-label="Add task by voice"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm5 3a1 1 0 11-2 0V4a1 1 0 112 0v3zM4 9a1 1 0 00-1 1v1a5 5 0 005 5h1a5 5 0 005-5v-1a1 1 0 10-2 0v1a3 3 0 01-3 3h-1a3 3 0 01-3-3v-1a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+            </button>
+            <button
+            type="submit"
+            className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-black transition-all disabled:bg-neutral-400 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:shadow-none"
+            aria-label="Add new task"
+            disabled={!inputValue.trim()}
+            >
+            Add
+            </button>
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="relative">
+            <input
+                type={isDateFocused || dateValue ? 'date' : 'text'}
+                value={dateValue}
+                onFocus={() => setIsDateFocused(true)}
+                onBlur={() => setIsDateFocused(false)}
+                onChange={e => setDateValue(e.target.value)}
+                placeholder="dd-mm-yyyy"
+                className={`${inputStyles}`}
+                aria-label="Due date"
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                </svg>
+            </div>
+        </div>
         <input
-            type="date"
-            value={dateValue}
-            onChange={e => setDateValue(e.target.value)}
-            className={`${inputStyles}`}
-            aria-label="Due date"
-        />
-        <input
-            type="time"
+            type={isTimeFocused || timeValue ? 'time' : 'text'}
             value={timeValue}
+            onFocus={() => setIsTimeFocused(true)}
+            onBlur={() => setIsTimeFocused(false)}
             onChange={e => setTimeValue(e.target.value)}
+            placeholder="--:--"
             className={`${inputStyles}`}
             aria-label="Due time"
             disabled={!dateValue}

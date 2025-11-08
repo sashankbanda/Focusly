@@ -233,7 +233,7 @@ const App: React.FC = () => {
         />
 
         <main className="min-h-screen flex flex-col items-center justify-center p-4">
-            <div className={`flex flex-col items-center justify-center gap-8 transition-all duration-500 ease-in-out ${isFocusMode ? 'scale-125' : 'scale-100'}`}>
+            <div className={`flex flex-col items-center justify-center gap-4 sm:gap-8 transition-all duration-500 ease-in-out ${isFocusMode ? 'scale-125' : 'scale-100'}`}>
                 <FlipClock
                     hours={currentTime.getHours()}
                     minutes={currentTime.getMinutes()}
@@ -244,22 +244,22 @@ const App: React.FC = () => {
                 </div>
             </div>
             
-            <div className={`flex items-center gap-6 mt-12 transition-opacity duration-500 ${isFocusMode ? 'opacity-0' : 'opacity-100'}`}>
+            <div className={`flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mt-8 sm:mt-12 transition-opacity duration-500 ${isFocusMode ? 'opacity-0' : 'opacity-100'}`}>
                 <button
                     onClick={() => setActiveView(activeView === 'tasks' ? null : 'tasks')}
-                    className={`px-8 py-3 text-lg font-semibold rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 ${activeView === 'tasks' ? 'bg-blue-600 text-white' : 'bg-white/50 dark:bg-neutral-800/50 text-gray-800 dark:text-gray-200'}`}
+                    className={`w-full sm:w-auto px-6 py-2 sm:px-8 sm:py-3 text-base sm:text-lg font-semibold rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 ${activeView === 'tasks' ? 'bg-blue-600 text-white' : 'bg-white/50 dark:bg-neutral-800/50 text-gray-800 dark:text-gray-200'}`}
                 >
                     Daily Tasks
                 </button>
                 <button
                     onClick={() => setActiveView(activeView === 'stats' ? null : 'stats')}
-                    className={`px-8 py-3 text-lg font-semibold rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 ${activeView === 'stats' ? 'bg-blue-600 text-white' : 'bg-white/50 dark:bg-neutral-800/50 text-gray-800 dark:text-gray-200'}`}
+                    className={`w-full sm:w-auto px-6 py-2 sm:px-8 sm:py-3 text-base sm:text-lg font-semibold rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 ${activeView === 'stats' ? 'bg-blue-600 text-white' : 'bg-white/50 dark:bg-neutral-800/50 text-gray-800 dark:text-gray-200'}`}
                 >
                     Productivity Stats
                 </button>
             </div>
 
-            <div className={`w-full container mx-auto px-4 mt-12 transition-all duration-500 ease-in-out ${isFocusMode || activeView === null ? 'opacity-0 max-h-0 overflow-hidden' : 'opacity-100 max-h-full'}`}>
+            <div className={`w-full container mx-auto px-2 sm:px-4 mt-8 sm:mt-12 transition-all duration-500 ease-in-out ${isFocusMode || activeView === null ? 'opacity-0 max-h-0 overflow-hidden' : 'opacity-100 max-h-full'}`}>
                 <div className="flex justify-center">
                     {activeView === 'tasks' && (
                         <TodoList
