@@ -9,6 +9,8 @@ const taskRoutes = require('./routes/tasks');
 require('./config/firebaseAdmin');
 
 const app = express();
+// Add this line to fix the X-Forwarded-For warning and enable correct rate limiting:
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 // CORS configuration for production
