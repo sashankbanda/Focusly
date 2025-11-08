@@ -1,5 +1,3 @@
-
-// FIX: Add a reference to Vite's client types to provide type definitions for `import.meta.env`.
 /// <reference types="vite/client" />
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -9,14 +7,12 @@ import firebase from 'firebase/compat/app';
 import FlipClock from './components/FlipClock';
 import DateDisplay from './components/DateDisplay';
 import TodoList from './components/TodoList';
-import ThemeToggle from './components/ThemeToggle';
 import ProductivityStats from './components/ProductivityStats';
 import WeeklyReportModal from './components/WeeklyReportModal';
-import FocusModeToggle from './components/FocusModeToggle';
 import LoginPage from './components/LoginPage';
 import LoadingSpinner from './components/LoadingSpinner';
-import Header from './components/Header';
 import Toast from './components/Toast';
+import Sidebar from './components/Sidebar'; // New Sidebar component
 
 export type Priority = 'Low' | 'Medium' | 'High';
 
@@ -39,7 +35,6 @@ type ToastMessage = {
   type: 'success' | 'error' | 'info';
 };
 
-// Use environment variable for the API base URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 const App: React.FC = () => {
@@ -55,6 +50,8 @@ const App: React.FC = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeView, setActiveView] = useState<'tasks' | 'stats' | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -89,7 +86,6 @@ const App: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/api/tasks`, { headers });
       if (!response.ok) throw new Error('Failed to fetch tasks');
       const data = await response.json();
-      // Map backend `_id`, `title`, `reminder` to frontend `id`, `text`, `reminderEnabled`
       const mappedTasks = data.map((task: any) => ({
         ...task,
         id: task._id,
@@ -114,7 +110,7 @@ const App: React.FC = () => {
   
   const handleLogout = async () => {
     await auth.signOut();
-    setTasks([]); // Clear tasks on logout
+    setTasks([]);
   };
 
   const handleAddTask = async (taskDetails: { text: string; dueDate?: string; priority?: Priority; tag?: string; reminderEnabled?: boolean; reminderLeadTime?: number; }) => {
@@ -133,7 +129,7 @@ const App: React.FC = () => {
       });
       if (!response.ok) throw new Error('Failed to add task');
       showToast('✅ Synced with Cloud', 'success');
-      fetchTasks(); // Refetch tasks to get the new one with DB id
+      fetchTasks();
     } catch (error) {
       console.error(error);
       showToast('Failed to add task.', 'error');
@@ -185,7 +181,6 @@ const App: React.FC = () => {
         } catch (error) {
             console.error(error);
             showToast('Failed to delete task.', 'error');
-            // Revert animation state if delete fails
             setExitingTaskIds(prev => {
                 const newSet = new Set(prev);
                 newSet.delete(id);
@@ -226,11 +221,18 @@ const App: React.FC = () => {
       <div className="fixed inset-0 bg-black/20 dark:bg-black/40"></div>
       
       <div className="relative z-10">
-        <ThemeToggle theme={theme} setTheme={setTheme} />
-        <FocusModeToggle isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode} />
-        {user && <Header user={user} onLogout={handleLogout} />}
+        <Sidebar
+          isOpen={isSidebarOpen}
+          setIsOpen={setIsSidebarOpen}
+          user={user}
+          onLogout={handleLogout}
+          theme={theme}
+          setTheme={setTheme}
+          isFocusMode={isFocusMode}
+          setIsFocusMode={setIsFocusMode}
+        />
 
-        <main className="min-h-screen flex flex-col items-center justify-center p-4 pt-24 sm:pt-4">
+        <main className="min-h-screen flex flex-col items-center justify-center p-4">
             <div className={`flex flex-col items-center justify-center gap-8 transition-all duration-500 ease-in-out ${isFocusMode ? 'scale-125' : 'scale-100'}`}>
                 <FlipClock
                     hours={currentTime.getHours()}
@@ -241,10 +243,25 @@ const App: React.FC = () => {
                     <DateDisplay date={currentTime} />
                 </div>
             </div>
+            
+            <div className={`flex items-center gap-6 mt-12 transition-opacity duration-500 ${isFocusMode ? 'opacity-0' : 'opacity-100'}`}>
+                <button
+                    onClick={() => setActiveView(activeView === 'tasks' ? null : 'tasks')}
+                    className={`px-8 py-3 text-lg font-semibold rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 ${activeView === 'tasks' ? 'bg-blue-600 text-white' : 'bg-white/50 dark:bg-neutral-800/50 text-gray-800 dark:text-gray-200'}`}
+                >
+                    Daily Tasks
+                </button>
+                <button
+                    onClick={() => setActiveView(activeView === 'stats' ? null : 'stats')}
+                    className={`px-8 py-3 text-lg font-semibold rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 ${activeView === 'stats' ? 'bg-blue-600 text-white' : 'bg-white/50 dark:bg-neutral-800/50 text-gray-800 dark:text-gray-200'}`}
+                >
+                    Productivity Stats
+                </button>
+            </div>
 
-            <div className={`w-full container mx-auto px-4 mt-12 transition-all duration-500 ease-in-out ${isFocusMode ? 'opacity-0 max-h-0 overflow-hidden' : 'opacity-100 max-h-full'}`}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    <div className="md:col-span-1">
+            <div className={`w-full container mx-auto px-4 mt-12 transition-all duration-500 ease-in-out ${isFocusMode || activeView === null ? 'opacity-0 max-h-0 overflow-hidden' : 'opacity-100 max-h-full'}`}>
+                <div className="flex justify-center">
+                    {activeView === 'tasks' && (
                         <TodoList
                             tasks={tasks}
                             exitingTaskIds={exitingTaskIds}
@@ -254,10 +271,10 @@ const App: React.FC = () => {
                             onDeleteTask={handleDeleteTask}
                             onClearHistory={handleClearHistory}
                         />
-                    </div>
-                    <div className="md:col-span-1 flex flex-col gap-8">
+                    )}
+                    {activeView === 'stats' && (
                         <ProductivityStats tasks={tasks} onViewReport={() => setIsReportModalOpen(true)} />
-                    </div>
+                    )}
                 </div>
             </div>
         </main>
