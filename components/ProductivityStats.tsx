@@ -1,4 +1,6 @@
+
 import React from 'react';
+// FIX: Correctly import Task type from the parent App component.
 import { Task } from '../App';
 
 interface ProductivityStatsProps {
@@ -10,7 +12,8 @@ const ProductivityStats: React.FC<ProductivityStatsProps> = ({ tasks, onViewRepo
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const tasksCreatedTodayCount = tasks.filter(task => new Date(task.id) >= todayStart).length;
+  // FIX: Use `createdAt` field for date comparison instead of `id`.
+  const tasksCreatedTodayCount = tasks.filter(task => new Date(task.createdAt) >= todayStart).length;
 
   const tasksCompletedTodayCount = tasks.filter(task => 
     task.completed && task.completionDate && new Date(task.completionDate) >= todayStart
@@ -25,7 +28,8 @@ const ProductivityStats: React.FC<ProductivityStatsProps> = ({ tasks, onViewRepo
   startOfWeek.setHours(0, 0, 0, 0);
 
   const tasksThisWeek = tasks.filter(task => {
-    const createdDate = new Date(task.id);
+    // FIX: Use `createdAt` field for date comparison.
+    const createdDate = new Date(task.createdAt);
     const dueDate = task.dueDate ? new Date(task.dueDate) : null;
     return createdDate >= startOfWeek || (dueDate && dueDate >= startOfWeek);
   });

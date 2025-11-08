@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+// FIX: Correctly import Priority type from the parent App component.
 import { Priority } from '../App';
 
 interface TaskInputProps {

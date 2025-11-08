@@ -1,15 +1,19 @@
+
 import React, { useState, useMemo } from 'react';
-import { Task } from '../App';
+// FIX: Correctly import Task and Priority types from the parent App component.
+import { Task, Priority } from '../App';
 import TaskInput from './TaskInput';
 import TaskItem from './TaskItem';
 
 interface TodoListProps {
   tasks: Task[];
-  exitingTaskIds: Set<number>;
+  // FIX: Changed to Set<string> to handle string-based IDs from the backend.
+  exitingTaskIds: Set<string>;
   isFocusMode: boolean;
-  onAddTask: (taskDetails: { text: string; dueDate?: string; priority?: import('/App').Priority; tag?: string; reminderEnabled?: boolean; reminderLeadTime?: number; }) => void;
-  onToggleTask: (id: number) => void;
-  onDeleteTask: (id: number) => void;
+  onAddTask: (taskDetails: { text: string; dueDate?: string; priority?: Priority; tag?: string; reminderEnabled?: boolean; reminderLeadTime?: number; }) => void;
+  // FIX: Changed ID type to string for backend compatibility.
+  onToggleTask: (id: string) => void;
+  onDeleteTask: (id: string) => void;
   onClearHistory: () => void;
 }
 
@@ -18,9 +22,9 @@ const Section: React.FC<{
   title: string;
   tasks: Task[];
   placeholder: string;
-  exitingTaskIds: Set<number>;
-  onToggleTask: (id: number) => void;
-  onDeleteTask: (id: number) => void;
+  exitingTaskIds: Set<string>;
+  onToggleTask: (id: string) => void;
+  onDeleteTask: (id: string) => void;
   children?: React.ReactNode;
 }> = ({ title, tasks: taskItems, children, placeholder, exitingTaskIds, onToggleTask, onDeleteTask }) => (
     <div className="mt-8">

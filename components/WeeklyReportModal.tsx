@@ -1,4 +1,6 @@
+
 import React, { useState, useMemo } from 'react';
+// FIX: Correctly import Task type from the parent App component.
 import { Task } from '../App';
 
 interface ReportModalProps {

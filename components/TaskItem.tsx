@@ -1,11 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
+// FIX: Correctly import Task type from the parent App component.
 import { Task } from '../App';
 
 interface TaskItemProps {
   task: Task;
   isExiting: boolean;
-  onToggle: (id: number) => void;
-  onDelete: (id: number) => void;
+  // FIX: Changed ID type to string for backend compatibility.
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, isExiting, onToggle, onDelete }) => {
