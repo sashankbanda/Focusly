@@ -52,6 +52,7 @@ const App: React.FC = () => {
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState<'tasks' | 'stats' | null>(null);
+  const [shownReminders, setShownReminders] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -91,6 +92,7 @@ const App: React.FC = () => {
         id: task._id,
         text: task.title,
         reminderEnabled: task.reminder,
+        reminderLeadTime: task.reminderLeadTime,
       }));
       setTasks(mappedTasks);
     } catch (error) {
@@ -102,6 +104,26 @@ const App: React.FC = () => {
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+  
+  // Reminder check effect
+  useEffect(() => {
+    const reminderInterval = setInterval(() => {
+        const now = new Date();
+        tasks.forEach(task => {
+            if (task.reminderEnabled && task.dueDate && !task.completed && typeof task.reminderLeadTime === 'number') {
+                const dueDate = new Date(task.dueDate);
+                const reminderTime = new Date(dueDate.getTime() - task.reminderLeadTime * 60 * 1000);
+                if (reminderTime <= now && dueDate > now && !shownReminders.has(task.id)) {
+                    showToast(`Reminder: "${task.text}" is due soon!`, 'info');
+                    setShownReminders(prev => new Set(prev).add(task.id));
+                }
+            }
+        });
+    }, 60000); // Check every minute
+
+    return () => clearInterval(reminderInterval);
+}, [tasks, shownReminders]);
+
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -125,6 +147,7 @@ const App: React.FC = () => {
             priority: taskDetails.priority,
             tag: taskDetails.tag,
             reminder: taskDetails.reminderEnabled,
+            reminderLeadTime: taskDetails.reminderLeadTime,
          }),
       });
       if (!response.ok) throw new Error('Failed to add task');
@@ -174,6 +197,11 @@ const App: React.FC = () => {
             setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
             showToast('✅ Synced with Cloud', 'success');
             setExitingTaskIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(id);
+                return newSet;
+            });
+            setShownReminders(prev => {
                 const newSet = new Set(prev);
                 newSet.delete(id);
                 return newSet;

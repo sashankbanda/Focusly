@@ -9,6 +9,7 @@ const taskSchema = new Schema({
   dueDate: { type: Date },
   completed: { type: Boolean, default: false },
   reminder: { type: Boolean, default: false },
+  reminderLeadTime: { type: Number }, // Time in minutes before due date
   createdAt: { type: Date, default: Date.now }
 });
 

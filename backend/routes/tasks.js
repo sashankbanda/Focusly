@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
 // POST a new task for the authenticated user
 router.post('/', async (req, res) => {
     try {
-        const { title, priority, tag, dueDate, reminder } = req.body;
+        const { title, priority, tag, dueDate, reminder, reminderLeadTime } = req.body;
         const newTask = new Task({
             userId: req.user.uid,
             title,
@@ -27,6 +27,7 @@ router.post('/', async (req, res) => {
             tag,
             dueDate,
             reminder,
+            reminderLeadTime,
             completed: false,
         });
         const savedTask = await newTask.save();
@@ -44,7 +45,7 @@ router.put('/:id', async (req, res) => {
         const task = await Task.findOne({ _id: id, userId: req.user.uid });
 
         if (!task) {
-            return res.status(404).json({ error: 'Task not found or you do not have permission to edit it.' });
+            return res.status(440).json({ error: 'Task not found or you do not have permission to edit it.' });
         }
         
         // Update fields provided in the body
