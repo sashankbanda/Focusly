@@ -14,10 +14,23 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 // CORS configuration for production
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://focuslyy.netlify.app'
+];
+
 const corsOptions = {
-  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173', // Fallback to common dev port
-  optionsSuccessStatus: 200
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed for this origin'));
+    }
+  },
+  optionsSuccessStatus: 200,
+  credentials: true
 };
+
 app.use(cors(corsOptions));
 
 // JSON middleware
