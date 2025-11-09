@@ -7,10 +7,11 @@ interface TodoListProps {
   tasks: Task[];
   exitingTaskIds: Set<string>;
   isFocusMode: boolean;
-  onAddTask: (taskDetails: { text: string; dueDate?: string; priority?: Priority; tag?: string; reminderEnabled?: boolean; reminderLeadTime?: number; }) => void;
+  onAddTask: (taskDetails: { text: string; dueDate?: string; priority?: Priority; tag?: string; reminderEnabled?: boolean; reminderLeadTime?: number; repeatDaily?: boolean; }) => void;
   onToggleTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
   onClearHistory: () => void;
+  onUpdateTask: (id: string, updates: Partial<Task>) => void;
 }
 
 const Section: React.FC<{
@@ -18,10 +19,13 @@ const Section: React.FC<{
   tasks: Task[];
   placeholder: string;
   exitingTaskIds: Set<string>;
+  editingTaskId: string | null;
   onToggleTask: (id: string) => void;
   onDeleteTask: (id: string) => void;
+  onSetEditing: (id: string | null) => void;
+  onUpdateTask: (id: string, updates: Partial<Task>) => void;
   children?: React.ReactNode;
-}> = ({ title, tasks: taskItems, children, placeholder, exitingTaskIds, onToggleTask, onDeleteTask }) => (
+}> = ({ title, tasks: taskItems, children, placeholder, exitingTaskIds, editingTaskId, onToggleTask, onDeleteTask, onSetEditing, onUpdateTask }) => (
     <div className="mt-8">
       <h3 className="text-lg font-semibold text-zinc-500 dark:text-zinc-400 border-b border-neutral-200 dark:border-neutral-700 pb-2 mb-4">{title}</h3>
       <div className="space-y-3">
@@ -31,8 +35,11 @@ const Section: React.FC<{
               key={task.id}
               task={task}
               isExiting={exitingTaskIds.has(task.id)}
+              isEditing={editingTaskId === task.id}
               onToggle={onToggleTask}
               onDelete={onDeleteTask}
+              onSetEditing={onSetEditing}
+              onUpdate={onUpdateTask}
             />
           ))
         ) : (
@@ -52,8 +59,10 @@ const TodoList: React.FC<TodoListProps> = ({
   onToggleTask,
   onDeleteTask,
   onClearHistory,
+  onUpdateTask,
 }) => {
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -75,7 +84,8 @@ const TodoList: React.FC<TodoListProps> = ({
 
   const isToday = (dateString: string) => {
     const taskDate = new Date(dateString);
-    return taskDate >= today && taskDate < tomorrow;
+    taskDate.setHours(0,0,0,0);
+    return taskDate.getTime() === today.getTime();
   };
 
   const todayTasks = filteredTasks.filter(
@@ -87,7 +97,7 @@ const TodoList: React.FC<TodoListProps> = ({
   );
 
   const historyTasks = filteredTasks
-    .filter(task => task.completed)
+    .filter(task => task.completed && !task.repeatDaily) // Don't show completed daily tasks in history
     .sort((a, b) => new Date(b.completionDate!).getTime() - new Date(a.completionDate!).getTime());
 
   return (
@@ -110,16 +120,22 @@ const TodoList: React.FC<TodoListProps> = ({
         tasks={todayTasks} 
         placeholder="No tasks for today." 
         exitingTaskIds={exitingTaskIds}
+        editingTaskId={editingTaskId}
         onToggleTask={onToggleTask}
         onDeleteTask={onDeleteTask}
+        onSetEditing={setEditingTaskId}
+        onUpdateTask={onUpdateTask}
       />
       <Section 
         title="Scheduled" 
         tasks={scheduledTasks} 
         placeholder="No upcoming tasks." 
         exitingTaskIds={exitingTaskIds}
+        editingTaskId={editingTaskId}
         onToggleTask={onToggleTask}
         onDeleteTask={onDeleteTask}
+        onSetEditing={setEditingTaskId}
+        onUpdateTask={onUpdateTask}
       />
       
       <div className={`transition-all duration-500 ease-in-out ${isFocusMode ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-screen opacity-100'}`}>
@@ -128,8 +144,11 @@ const TodoList: React.FC<TodoListProps> = ({
             tasks={historyTasks} 
             placeholder="No completed tasks yet."
             exitingTaskIds={exitingTaskIds}
+            editingTaskId={editingTaskId}
             onToggleTask={onToggleTask}
             onDeleteTask={onDeleteTask}
+            onSetEditing={setEditingTaskId}
+            onUpdateTask={onUpdateTask}
         >
           {historyTasks.length > 0 && (
             <div className="flex justify-end mt-4">

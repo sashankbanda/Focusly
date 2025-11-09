@@ -1,22 +1,27 @@
-
 import React, { useState, useEffect } from 'react';
-// FIX: Correctly import Task type from the parent App component.
 import { Task } from '../App';
+import EditTaskForm from './EditTaskForm'; // Import the new form
 
 interface TaskItemProps {
   task: Task;
   isExiting: boolean;
-  // FIX: Changed ID type to string for backend compatibility.
+  isEditing: boolean;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onSetEditing: (id: string | null) => void;
+  onUpdate: (id: string, updates: Partial<Task>) => void;
 }
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, isExiting, onToggle, onDelete }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, isExiting, isEditing, onToggle, onDelete, onSetEditing, onUpdate }) => {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  if (isEditing) {
+    return <EditTaskForm task={task} onUpdate={onUpdate} onCancel={() => onSetEditing(null)} />;
+  }
   
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -38,8 +43,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, isExiting, onToggle, onDelete
     const dueDate = new Date(dueDateString);
     dueDate.setHours(0, 0, 0, 0);
 
-    if (dueDate.getTime() <= now.getTime()) {
-      return null;
+    if (dueDate.getTime() < now.getTime()) {
+      return 'Overdue';
+    }
+    
+    if (dueDate.getTime() === now.getTime()) {
+        return 'Today';
     }
 
     const diffTime = dueDate.getTime() - now.getTime();
@@ -102,6 +111,9 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, isExiting, onToggle, onDelete
             {task.tag && (
                 <span className="text-xs font-semibold px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">{task.tag}</span>
             )}
+            {task.repeatDaily && (
+                <span title="Repeats daily" className="text-zinc-500">🔁</span>
+            )}
           </div>
           
           <div className="flex items-center gap-3 text-xs mt-1 flex-wrap">
@@ -109,7 +121,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, isExiting, onToggle, onDelete
                 <p className="text-blue-500 dark:text-blue-400">Due: {formatDate(task.dueDate)}</p>
               )}
               {daysLeftText && (
-                 <p className="font-semibold text-orange-500 dark:text-orange-400">({daysLeftText})</p>
+                 <p className={`font-semibold ${daysLeftText === 'Overdue' ? 'text-red-500' : 'text-orange-500 dark:text-orange-400'}`}>({daysLeftText})</p>
               )}
               {task.completionDate && task.completed && (
                 <p className="text-zinc-500 dark:text-zinc-400">Completed: {formatDate(task.completionDate)}</p>
@@ -125,15 +137,27 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, isExiting, onToggle, onDelete
           </div>
         </div>
       </div>
-      <button
-        onClick={() => onDelete(task.id)}
-        className="text-zinc-400 dark:text-zinc-500 hover:text-red-500 transition-colors ml-4 flex-shrink-0"
-        aria-label={`Delete task: ${task.text}`}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
-        </svg>
-      </button>
+      <div className="flex items-center ml-4 flex-shrink-0">
+        <button
+            onClick={() => onSetEditing(task.id)}
+            className="text-zinc-400 dark:text-zinc-500 hover:text-blue-500 transition-colors mr-2"
+            aria-label={`Edit task: ${task.text}`}
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+            </svg>
+        </button>
+        <button
+            onClick={() => onDelete(task.id)}
+            className="text-zinc-400 dark:text-zinc-500 hover:text-red-500 transition-colors"
+            aria-label={`Delete task: ${task.text}`}
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+            </svg>
+        </button>
+      </div>
     </div>
   );
 };

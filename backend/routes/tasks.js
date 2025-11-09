@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
 // POST a new task for the authenticated user
 router.post('/', async (req, res) => {
     try {
-        const { title, priority, tag, dueDate, reminder, reminderLeadTime } = req.body;
+        const { title, priority, tag, dueDate, reminder, reminderLeadTime, repeatDaily } = req.body;
         const newTask = new Task({
             userId: req.user.uid,
             title,
@@ -28,6 +28,7 @@ router.post('/', async (req, res) => {
             dueDate,
             reminder,
             reminderLeadTime,
+            repeatDaily, // Add new field
             completed: false,
         });
         const savedTask = await newTask.save();
@@ -41,14 +42,19 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        // Ensure the task belongs to the authenticated user before updating
         const task = await Task.findOne({ _id: id, userId: req.user.uid });
 
         if (!task) {
-            return res.status(440).json({ error: 'Task not found or you do not have permission to edit it.' });
+            return res.status(404).json({ error: 'Task not found or you do not have permission to edit it.' });
         }
         
-        // Update fields provided in the body
+        // If a task is being marked as complete, set the completionDate
+        if (req.body.completed === true && !task.completed) {
+            req.body.completionDate = new Date();
+        } else if (req.body.completed === false) {
+            req.body.completionDate = null;
+        }
+
         Object.assign(task, req.body);
         
         const updatedTask = await task.save();
@@ -62,7 +68,6 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        // Ensure the task belongs to the authenticated user before deleting
         const result = await Task.deleteOne({ _id: id, userId: req.user.uid });
 
         if (result.deletedCount === 0) {
@@ -78,7 +83,8 @@ router.delete('/:id', async (req, res) => {
 router.delete('/history', async (req, res) => {
     try {
         const userId = req.user.uid;
-        await Task.deleteMany({ userId: userId, completed: true });
+        // Do not delete completed daily tasks, they should be reset
+        await Task.deleteMany({ userId: userId, completed: true, repeatDaily: { $ne: true } });
         res.status(200).json({ message: 'Completed tasks cleared successfully.' });
     } catch (error) {
         res.status(500).json({ error: 'Server error while clearing history.' });

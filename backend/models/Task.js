@@ -10,6 +10,8 @@ const taskSchema = new Schema({
   completed: { type: Boolean, default: false },
   reminder: { type: Boolean, default: false },
   reminderLeadTime: { type: Number }, // Time in minutes before due date
+  repeatDaily: { type: Boolean, default: false }, // New field for daily tasks
+  completionDate: { type: Date }, // Field to track when a task was completed
   createdAt: { type: Date, default: Date.now }
 });
 

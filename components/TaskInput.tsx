@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Priority } from '../App';
 
 interface TaskInputProps {
-  onAddTask: (details: { text: string; dueDate?: string; priority?: Priority; tag?: string; reminderEnabled?: boolean; reminderLeadTime?: number }) => void;
+  onAddTask: (details: { text: string; dueDate?: string; priority?: Priority; tag?: string; reminderEnabled?: boolean; reminderLeadTime?: number; repeatDaily?: boolean; }) => void;
 }
+
+const PREMADE_TAGS = ['Work', 'Self Care', 'Food', 'Assignment'];
 
 const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
   const [inputValue, setInputValue] = useState('');
@@ -13,6 +15,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
   const [tag, setTag] = useState('');
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderLeadTime, setReminderLeadTime] = useState(15);
+  const [repeatDaily, setRepeatDaily] = useState(false); // New state for daily repeat
 
   const [isDateFocused, setIsDateFocused] = useState(false);
   const [isTimeFocused, setIsTimeFocused] = useState(false);
@@ -36,6 +39,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
         tag: tag.trim() || undefined,
         reminderEnabled: reminderEnabled && !!dueDate,
         reminderLeadTime: reminderEnabled && !!dueDate ? reminderLeadTime : undefined,
+        repeatDaily,
       });
       setInputValue('');
       setDateValue('');
@@ -44,6 +48,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
       setTag('');
       setReminderEnabled(false);
       setReminderLeadTime(15);
+      setRepeatDaily(false);
     }
   }
 
@@ -140,41 +145,59 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
             <option value="Medium">Priority: Medium</option>
             <option value="High">Priority: High</option>
         </select>
-         <input
-            type="text"
-            value={tag}
-            onChange={e => setTag(e.target.value)}
-            placeholder="Tag (e.g., Work)"
-            className={`${inputStyles}`}
-            aria-label="Task tag"
-        />
+        <div className="sm:col-span-1">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                {PREMADE_TAGS.map(t => (
+                    <button type="button" key={t} onClick={() => setTag(t)} className={`px-2 py-1 text-xs rounded-full ${tag === t ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-neutral-700'}`}>{t}</button>
+                ))}
+            </div>
+             <input
+                type="text"
+                value={tag}
+                onChange={e => setTag(e.target.value)}
+                placeholder="Or a custom tag"
+                className={`${inputStyles}`}
+                aria-label="Task tag"
+            />
+        </div>
       </div>
-       <div className="flex items-center justify-start pt-1 space-x-4">
+       <div className="flex items-center justify-between pt-1">
           <label className="flex items-center cursor-pointer text-sm text-zinc-600 dark:text-zinc-400">
             <input
               type="checkbox"
-              checked={reminderEnabled}
-              onChange={e => setReminderEnabled(e.target.checked)}
-              disabled={!dateValue}
+              checked={repeatDaily}
+              onChange={e => setRepeatDaily(e.target.checked)}
               className="h-4 w-4 rounded bg-gray-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-blue-500 focus:ring-blue-500"
             />
-            <span className="ml-2">Set Reminder</span>
+            <span className="ml-2">Repeat daily</span>
           </label>
-          {reminderEnabled && dateValue && (
-            <select
-              value={reminderLeadTime}
-              onChange={e => setReminderLeadTime(Number(e.target.value))}
-              className={`${inputStyles} text-sm !py-1 w-auto`}
-              aria-label="Reminder time"
-            >
-              <option value={0}>At time of event</option>
-              <option value={5}>5 minutes before</option>
-              <option value={15}>15 minutes before</option>
-              <option value={30}>30 minutes before</option>
-              <option value={60}>1 hour before</option>
-            </select>
-          )}
-        </div>
+          <div className="flex items-center space-x-4">
+            <label className="flex items-center cursor-pointer text-sm text-zinc-600 dark:text-zinc-400">
+              <input
+                type="checkbox"
+                checked={reminderEnabled}
+                onChange={e => setReminderEnabled(e.target.checked)}
+                disabled={!dateValue}
+                className="h-4 w-4 rounded bg-gray-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-blue-500 focus:ring-blue-500"
+              />
+              <span className="ml-2">Set Reminder</span>
+            </label>
+            {reminderEnabled && dateValue && (
+              <select
+                value={reminderLeadTime}
+                onChange={e => setReminderLeadTime(Number(e.target.value))}
+                className={`${inputStyles} text-sm !py-1 w-auto`}
+                aria-label="Reminder time"
+              >
+                <option value={0}>At time of event</option>
+                <option value={5}>5 minutes before</option>
+                <option value={15}>15 minutes before</option>
+                <option value={30}>30 minutes before</option>
+                <option value={60}>1 hour before</option>
+              </select>
+            )}
+          </div>
+       </div>
     </form>
   );
 };

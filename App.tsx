@@ -12,7 +12,7 @@ import WeeklyReportModal from './components/WeeklyReportModal';
 import LoginPage from './components/LoginPage';
 import LoadingSpinner from './components/LoadingSpinner';
 import Toast from './components/Toast';
-import Sidebar from './components/Sidebar'; // New Sidebar component
+import Sidebar from './components/Sidebar'; 
 
 export type Priority = 'Low' | 'Medium' | 'High';
 
@@ -27,6 +27,7 @@ export interface Task {
   tag?: string;
   reminderEnabled?: boolean;
   reminderLeadTime?: number;
+  repeatDaily?: boolean; // New property
 }
 
 type ToastMessage = {
@@ -79,6 +80,32 @@ const App: React.FC = () => {
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ id: Date.now(), message, type });
   };
+  
+  const checkAndResetDailyTasks = useCallback(async (tasksFromServer: any[]) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tasksToReset = tasksFromServer.filter(
+          (task) => task.repeatDaily && task.completed && new Date(task.completionDate) < today
+      );
+
+      if (tasksToReset.length > 0) {
+          const headers = await getAuthHeader();
+          // Reset each task
+          await Promise.all(
+              tasksToReset.map(task =>
+                  fetch(`${API_BASE_URL}/api/tasks/${task._id}`, {
+                      method: 'PUT',
+                      headers,
+                      body: JSON.stringify({ completed: false }),
+                  })
+              )
+          );
+          // Return true if tasks were reset, so we can refetch
+          return true;
+      }
+      return false;
+  }, [getAuthHeader]);
+
 
   const fetchTasks = useCallback(async () => {
     if (!user) return;
@@ -87,25 +114,35 @@ const App: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/api/tasks`, { headers });
       if (!response.ok) throw new Error('Failed to fetch tasks');
       const data = await response.json();
+      
+      const wereTasksReset = await checkAndResetDailyTasks(data);
+      if (wereTasksReset) {
+          // Refetch if daily tasks were reset to get their updated state
+          fetchTasks();
+          return;
+      }
+
       const mappedTasks = data.map((task: any) => ({
         ...task,
         id: task._id,
         text: task.title,
         reminderEnabled: task.reminder,
         reminderLeadTime: task.reminderLeadTime,
+        repeatDaily: task.repeatDaily,
       }));
       setTasks(mappedTasks);
     } catch (error) {
       console.error(error);
       showToast('Could not load tasks.', 'error');
     }
-  }, [user, getAuthHeader]);
+  }, [user, getAuthHeader, checkAndResetDailyTasks]);
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    if (user) {
+        fetchTasks();
+    }
+  }, [user, fetchTasks]);
   
-  // Reminder check effect
   useEffect(() => {
     const reminderInterval = setInterval(() => {
         const now = new Date();
@@ -119,7 +156,7 @@ const App: React.FC = () => {
                 }
             }
         });
-    }, 60000); // Check every minute
+    }, 60000); 
 
     return () => clearInterval(reminderInterval);
 }, [tasks, shownReminders]);
@@ -135,7 +172,7 @@ const App: React.FC = () => {
     setTasks([]);
   };
 
-  const handleAddTask = async (taskDetails: { text: string; dueDate?: string; priority?: Priority; tag?: string; reminderEnabled?: boolean; reminderLeadTime?: number; }) => {
+  const handleAddTask = async (taskDetails: { text: string; dueDate?: string; priority?: Priority; tag?: string; reminderEnabled?: boolean; reminderLeadTime?: number; repeatDaily?: boolean; }) => {
     try {
       const headers = await getAuthHeader();
       const response = await fetch(`${API_BASE_URL}/api/tasks`, {
@@ -148,6 +185,7 @@ const App: React.FC = () => {
             tag: taskDetails.tag,
             reminder: taskDetails.reminderEnabled,
             reminderLeadTime: taskDetails.reminderLeadTime,
+            repeatDaily: taskDetails.repeatDaily,
          }),
       });
       if (!response.ok) throw new Error('Failed to add task');
@@ -156,6 +194,23 @@ const App: React.FC = () => {
     } catch (error) {
       console.error(error);
       showToast('Failed to add task.', 'error');
+    }
+  };
+
+  const handleUpdateTask = async (id: string, updates: Partial<Task>) => {
+    try {
+        const headers = await getAuthHeader();
+        const response = await fetch(`${API_BASE_URL}/api/tasks/${id}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({ ...updates, title: updates.text }), // Ensure backend 'title' field is used
+        });
+        if (!response.ok) throw new Error('Failed to update task');
+        showToast('Task updated.', 'success');
+        fetchTasks(); // Refetch to get updated list
+    } catch (error) {
+        console.error(error);
+        showToast('Failed to update task.', 'error');
     }
   };
 
@@ -226,7 +281,7 @@ const App: React.FC = () => {
             headers,
         });
         if (!response.ok) throw new Error('Failed to clear history');
-        setTasks(tasks.filter(t => !t.completed));
+        setTasks(tasks.filter(t => !t.completed || t.repeatDaily));
         showToast('Completed tasks cleared.', 'success');
     } catch (error) {
         console.error(error);
@@ -298,6 +353,7 @@ const App: React.FC = () => {
                             onToggleTask={handleToggleTask}
                             onDeleteTask={handleDeleteTask}
                             onClearHistory={handleClearHistory}
+                            onUpdateTask={handleUpdateTask}
                         />
                     )}
                     {activeView === 'stats' && (
